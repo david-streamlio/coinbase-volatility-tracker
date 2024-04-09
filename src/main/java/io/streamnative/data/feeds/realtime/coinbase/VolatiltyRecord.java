@@ -4,7 +4,7 @@ import org.apache.pulsar.functions.api.Record;
 
 public class VolatiltyRecord implements Record<Volatility> {
 
-    private Volatility value;
+    private final Volatility value;
 
     public VolatiltyRecord(Volatility volatility) {
         this.value = volatility;

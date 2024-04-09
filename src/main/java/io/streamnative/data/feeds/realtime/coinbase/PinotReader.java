@@ -17,15 +17,15 @@ public class PinotReader implements Closeable {
     public static final String USER_SECRET_NAME = "db.user";
     public static final String PASSWORD_SECRET_NAME = "db.password";
     public static final String QUERY_PROPERTY_NAME = "db.query";
-    private String host;
+    private final String host;
 
-    private Integer port;
+    private final Integer port;
 
-    private String userName;
+    private final String userName;
 
-    private String password;
+    private final String password;
 
-    private String query;
+    private final String query;
 
     private String jdbcUrl;
 
