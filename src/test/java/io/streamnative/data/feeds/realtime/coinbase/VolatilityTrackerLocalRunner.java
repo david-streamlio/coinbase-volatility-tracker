@@ -11,15 +11,22 @@ import java.util.Map;
 public class VolatilityTrackerLocalRunner {
 
     private static final Map<String, Object> CONFIGS = new HashMap<>();
-    private static final Map<String, Object> SECRETS = new HashMap<>();
-    private static final String QUERY = "";
+    private static final String QUERY = "SELECT product_id,\n" +
+            "  FLOOR(millis / (1 * 60 * 1000)) * (1 * 60 * 1000) AS window_start_time,\n" +
+            "  FLOOR(millis / (1 * 60 * 1000)) * (1 * 60 * 1000) + (1 * 60 * 1000) AS window_end_time,\n" +
+            "  STDDEV_SAMP(price) AS volatility\n" +
+            "FROM DefaultTenant.coinbase_ticker\n" +
+            "WHERE millis >= FLOOR((NOW() - 300000) / (1 * 60 * 1000)) * (1 * 60 * 1000)\n" +
+            "GROUP BY product_id,\n" +
+            "  window_start_time\n" +
+            "ORDER BY window_start_time ASC,\n" +
+            "  volatility DESC LIMIT 10000;";
+
 
     static {
-        CONFIGS.put(PinotReader.PORT_PROPERTY_NAME, 8000);
-        CONFIGS.put(PinotReader.HOST_PROPERTY_NAME, "localhost");
+        CONFIGS.put(PinotReader.PORT_PROPERTY_NAME, 9000);
+        CONFIGS.put(PinotReader.HOST_PROPERTY_NAME, "192.168.1.130");
         CONFIGS.put(PinotReader.QUERY_PROPERTY_NAME, QUERY);
-        SECRETS.put(PinotReader.USER_SECRET_NAME, "admin");
-        SECRETS.put(PinotReader.PASSWORD_SECRET_NAME, "");
     }
 
     public static void main(String[] args) throws Exception {
@@ -27,7 +34,6 @@ public class VolatilityTrackerLocalRunner {
                 SourceConfig.builder()
                         .className(VolatilityTracker.class.getName())
                         .configs(CONFIGS)
-                        .secrets(SECRETS)
                         .topicName("persistent://public/default/volatility")
                         .processingGuarantees(FunctionConfig.ProcessingGuarantees.ATMOST_ONCE)
                         .schemaType(Schema.JSON(Volatility.class).getSchemaInfo().getName())
@@ -41,7 +47,7 @@ public class VolatilityTrackerLocalRunner {
                         .build();
 
         localRunner.start(false);
-        Thread.sleep(120 * 1000);
+        Thread.sleep(240 * 1000);
         localRunner.stop();
     }
 }

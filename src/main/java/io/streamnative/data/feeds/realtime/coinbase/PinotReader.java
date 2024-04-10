@@ -14,16 +14,10 @@ public class PinotReader implements Closeable {
 
     public static final String HOST_PROPERTY_NAME = "db.host";
     public static final String PORT_PROPERTY_NAME = "db.port";
-    public static final String USER_SECRET_NAME = "db.user";
-    public static final String PASSWORD_SECRET_NAME = "db.password";
     public static final String QUERY_PROPERTY_NAME = "db.query";
     private final String host;
 
     private final Integer port;
-
-    private final String userName;
-
-    private final String password;
 
     private final String query;
 
@@ -42,13 +36,10 @@ public class PinotReader implements Closeable {
                 .getOrDefault(HOST_PROPERTY_NAME, "localhost");
 
         this.port = (Integer)srcCtx.getSourceConfig().getConfigs()
-                .getOrDefault(PORT_PROPERTY_NAME, 8000);
+                .getOrDefault(PORT_PROPERTY_NAME, 9000);
 
         this.query = (String) srcCtx.getSourceConfig().getConfigs()
                 .get(QUERY_PROPERTY_NAME);
-
-        this.userName = srcCtx.getSecret(USER_SECRET_NAME);
-        this.password = srcCtx.getSecret(PASSWORD_SECRET_NAME);
 
         scheduler = Executors.newSingleThreadScheduledExecutor();
 
@@ -69,9 +60,9 @@ public class PinotReader implements Closeable {
             Statement stmt = connection.createStatement();
             ResultSet rs = stmt.executeQuery(this.query);
             while (rs.next()) {
-                Volatility volatility = new Volatility(rs.getLong(0),
+                Volatility volatility = new Volatility(rs.getString(0),
                         rs.getLong(1),
-                        rs.getString(2),
+                        rs.getLong(2),
                         rs.getFloat(3));
                 this.pushSource.consume(new VolatiltyRecord(volatility));
             }
@@ -90,7 +81,7 @@ public class PinotReader implements Closeable {
 
     private Connection getConnection() throws SQLException {
         if (this.connection == null) {
-            this.connection = DriverManager.getConnection(getJdbcUrl(), userName, password);
+            this.connection = DriverManager.getConnection(getJdbcUrl());
         }
         return connection;
     }
